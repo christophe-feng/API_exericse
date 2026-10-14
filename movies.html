@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>本週電影票房 (2026-02-23 ~ 2026-03-01)</title>
+    <!-- 引用 Bootstrap 5.3.8 CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css"
+        integrity="sha512-2bBQCjcnw658Lho4nlXJcc6WkV/UxpE/sAokbXPxQNGqmNdQrWqtw26Ns9kFF/yG792pKR1Sx8/Y1Lf1XN4GKA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        .table-hover tbody tr:hover {
+            background-color: #f0f7ff;
+        }
+        .revenue-cell {
+            text-align: right;
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+        .header-bg {
+            background: linear-gradient(135deg, #004d99 0%, #007bff 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            border-radius: 0 0 1rem 1rem;
+        }
+        .badge-country {
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+    <div class="header-bg shadow-sm text-center">
+        <h1 class="display-5 fw-bold">本週電影票房動態串接</h1>
+        <p class="lead mb-0">統計區間：2026-02-23 ~ 2026-03-01</p>
+    </div>
+
+    <div class="container-fluid px-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr class="text-center">
+                                <th style="width: 60px">序號</th>
+                                <th style="width: 100px">國別</th>
+                                <th>片名</th>
+                                <th style="width: 120px">上映日</th>
+                                <th style="width: 80px">院數</th>
+                                <th style="width: 120px">本週金額</th>
+                                <th style="width: 100px">週變動</th>
+                                <th style="width: 100px">市占率</th>
+                                <th style="width: 120px">總金額</th>
+                                <th style="width: 100px">總票數</th>
+                            </tr>
+                        </thead>
+                        <tbody id="movieTbody">
+                            <!-- 資料將由 JS 動態產生 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引用 jQuery 3.7.1 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+        integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
+    <!-- 引用 Bootstrap 5.3.8 JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.min.js"
+        integrity="sha512-nKXmKvJyiGQy343jatQlzDprflyB5c+tKCzGP3Uq67v+lmzfnZUi/ZT+fc6ITZfSC5HhaBKUIvr/nTLCV+7F+Q=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script>
+        $(document).ready(function () {
+            // API 串接 URL (指向轉換後的 JSON)
+            const url = "./data/movies_weekly.json";
+
+            $.ajax({
+                type: "GET",
+                url: url,
+                dataType: "json",
+                success: function (res) {
+                    let tmpText = '';
+                    $.each(res, function (key, movie) {
+                        // 處理數值格式化
+                        let weeklyAmount = movie["金額"].toLocaleString('zh-TW');
+                        let totalAmount = movie["總金額"].toLocaleString('zh-TW');
+                        let totalVotes = movie["總票數"].toLocaleString('zh-TW');
+                        
+                        // 判斷變動率顏色
+                        let changeRaw = movie["金額變動(%)"];
+                        let changeClass = changeRaw.includes('-') ? 'text-danger' : 'text-success';
+                        if (changeRaw === "0" || changeRaw === "0%") changeClass = 'text-muted';
+
+                        tmpText += `
+                        <tr>
+                            <td class="text-center fw-bold">${movie["序號"]}</td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary badge-country">${movie["國別"]}</span>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">${movie["片名"]}</div>
+                                <small class="text-muted d-block text-truncate" style="max-width: 300px;">${movie["出品"]}</small>
+                            </td>
+                            <td class="text-center small">${movie["上映日"]}</td>
+                            <td class="text-center">${movie["院數"]}</td>
+                            <td class="revenue-cell fw-bold">$${weeklyAmount}</td>
+                            <td class="text-center ${changeClass}">${movie["金額變動(%)"]}</td>
+                            <td class="text-center">${movie["市占率(%)"]}</td>
+                            <td class="revenue-cell text-primary font-monospace">$${totalAmount}</td>
+                            <td class="text-center">${totalVotes}</td>
+                        </tr>
+                        `;
+                    });
+
+                    $('#movieTbody').html(tmpText);
+                },
+                error: function () {
+                    $('#movieTbody').html(`<tr><td colspan="10" class="text-center p-5 text-danger">資料讀取失敗，請確認 JSON 檔案是否存在。</td></tr>`);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
